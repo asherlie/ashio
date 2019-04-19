@@ -7,7 +7,11 @@
 
 #include "raw.h"
 
-struct termios def;
+struct termios def, raw;
+
+void raw_mode(){
+      tcsetattr(0, TCSANOW, &raw);
+}
 
 /* reset_term can only be called after getline_raw has been */
 void reset_term(){
@@ -18,11 +22,10 @@ void reset_term(){
  * returns NULL on ctrl-c
  */
 char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
-      struct termios tiop;
-      tcgetattr(0, &tiop);
+      tcgetattr(0, &raw);
       tcgetattr(0, &def);
-      cfmakeraw(&tiop);
-      tcsetattr(0, TCSANOW, &tiop);
+      cfmakeraw(&raw);
+      raw_mode();
       char c;
 
       int buf_sz = 2;
@@ -62,6 +65,7 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
             }
             ret[(*bytes_read)++] = c;
             putchar(c);
+            printf("%i\n", c);
       }
       /* before exiting, we restore term to its
        * default settings
