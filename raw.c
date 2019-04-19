@@ -34,6 +34,14 @@ char* getline_raw(int* bytes_read, _Bool* tab){
                   *tab = 1;
                   break;
             }
+            /* delete */
+            if(c == 127){
+                  if(*bytes_read == 0)continue;
+                  ret[--(*bytes_read)] = 0;
+                  printf("\r%s%c", ret, ' ');
+                  printf("\r%s", ret);
+                  continue;
+            }
             if(*bytes_read == buf_sz){
                   buf_sz *= 2;
                   char* tmp_s = calloc(buf_sz, 1);
