@@ -1,1 +1,6 @@
-getline_raw() reads lines from stdin with the terminal in raw mode
+char* getline_raw(int* bytes_read, _Bool* tab) reads lines from stdin with
+the terminal in raw mode
+
+*bytes_read is set to the length of the input in
+*tab is set to 1 if input was terminated with a tab character - this is help
+ful for implementing tab completion
