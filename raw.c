@@ -65,7 +65,6 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
             }
             ret[(*bytes_read)++] = c;
             putchar(c);
-            printf("%i\n", c);
       }
       /* before exiting, we restore term to its
        * default settings
