@@ -38,8 +38,7 @@ char* getline_raw(int* bytes_read, _Bool* tab){
             if(c == 127){
                   if(*bytes_read == 0)continue;
                   ret[--(*bytes_read)] = 0;
-                  printf("\r%s%c", ret, ' ');
-                  printf("\r%s", ret);
+                  printf("\r%s%c\r%s", ret, ' ', ret);
                   continue;
             }
             if(*bytes_read == buf_sz){
