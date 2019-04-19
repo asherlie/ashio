@@ -12,7 +12,7 @@ int main(){
       int sz;
       _Bool tab = 0;
       char* ln;
-      while((ln = getline_raw(&sz, &tab))){
+      while((ln = getline_raw(&sz, &tab, NULL))){
             printf("\n%i %s\n", sz, ln);
             free(ln);
       }
