@@ -10,7 +10,7 @@
 /* reads a line from stdin until an \n is found or a tab is found 
  * returns NULL on ctrl-c
  */
-char* raw_getline(int* bytes_read, _Bool* tab){
+char* getline_raw(int* bytes_read, _Bool* tab){
       struct termios tiop, def;
       tcgetattr(0, &tiop);
       tcgetattr(0, &def);
@@ -57,7 +57,7 @@ int main(){
       int sz;
       _Bool tab = 0;
       char* ln;
-      while((ln = raw_getline(&sz, &tab))){
+      while((ln = getline_raw(&sz, &tab))){
             printf("\n%i %s\n", sz, ln);
             free(ln);
       }
