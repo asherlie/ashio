@@ -1,1 +1,1 @@
-char* getline_raw(int* bytes_read, _Bool* tab);
+char* getline_raw(int* bytes_read, _Bool* tab, int* ignore);
