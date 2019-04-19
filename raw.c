@@ -51,16 +51,3 @@ char* getline_raw(int* bytes_read, _Bool* tab){
 
       return ret;
 }
-
-#if 0
-int main(){
-      int sz;
-      _Bool tab = 0;
-      char* ln;
-      while((ln = getline_raw(&sz, &tab))){
-            printf("\n%i %s\n", sz, ln);
-            free(ln);
-      }
-      return 0;
-}
-#endif

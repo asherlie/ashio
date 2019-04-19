@@ -4,3 +4,5 @@ the terminal in raw mode
 *bytes_read is set to the length of the input in
 *tab is set to 1 if input was terminated with a tab character - this is help
 ful for implementing tab completion
+
+the char* returned by getline_raw() should be freed
