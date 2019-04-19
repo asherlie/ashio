@@ -7,11 +7,18 @@
 
 #include "raw.h"
 
+struct termios def;
+
+/* reset_term can only be called after getline_raw has been */
+void reset_term(){
+      tcsetattr(0, TCSANOW, &def);
+}
+
 /* reads a line from stdin until an \n is found or a tab is found 
  * returns NULL on ctrl-c
  */
 char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
-      struct termios tiop, def;
+      struct termios tiop;
       tcgetattr(0, &tiop);
       tcgetattr(0, &def);
       cfmakeraw(&tiop);
@@ -59,7 +66,7 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
       /* before exiting, we restore term to its
        * default settings
        */
-      tcsetattr(0, TCSANOW, &def);
+      reset_term();
 
       return ret;
 }
