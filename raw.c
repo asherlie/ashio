@@ -31,7 +31,7 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
       int buf_sz = 2;
       char* ret = calloc(buf_sz, 1);
 
-      *tab = *bytes_read = 0;
+      *tab = (*bytes_read = 0);
 
       while((c = fgetc(stdin)) != '\r'){
             if(ignore){
@@ -83,7 +83,7 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
 char* tab_complete(void* data_douplep, int data_offset, int optlen, char iter_opts, int* bytes_read){
       _Bool tab, found_m;
       char* ret = getline_raw(bytes_read, &tab, NULL), * tmp_ch;
-      if(tab){
+      if(tab && data_douplep){
             found_m = 0;
             _Bool select = 0;
             int maxlen = *bytes_read, tmplen;
@@ -91,7 +91,8 @@ char* tab_complete(void* data_douplep, int data_offset, int optlen, char iter_op
                   for(int i = 0; i <= optlen; ++i){
                         /* we treat i == optlen as input string
                          */
-                        tmp_ch = (i != optlen) ? ((char**)(data_douplep+data_offset))[i] : ret;
+                        /*                            sizeof(char) == 1 */
+                        tmp_ch = (i != optlen) ? ((char**)((char*)data_douplep+data_offset))[i] : ret;
                         if(strstr(tmp_ch, ret)){
                               found_m = 1;
 
@@ -124,6 +125,7 @@ char* tab_complete(void* data_douplep, int data_offset, int optlen, char iter_op
                               if(select)break;
                               continue;
                         }
+                        /* TODO: in this case, allow user to enter more chars */
                         else if(i == optlen-1 && !found_m){
                               select = 1;
                               break;
