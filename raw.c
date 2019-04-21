@@ -80,7 +80,7 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
  */
 /* tab_complete behaves like getline(), but does not include \n char in returned string
  */
-char* tab_complete(void* data_douplep, int data_offset, int optlen, char iter_opts, int* bytes_read){
+char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int optlen, char iter_opts, int* bytes_read){
       _Bool tab, found_m;
       char* ret = getline_raw(bytes_read, &tab, NULL), * tmp_ch;
       if(tab && data_douplep){
@@ -91,8 +91,7 @@ char* tab_complete(void* data_douplep, int data_offset, int optlen, char iter_op
                   for(int i = 0; i <= optlen; ++i){
                         /* we treat i == optlen as input string
                          */
-                        /*                            sizeof(char) == 1 */
-                        tmp_ch = (i != optlen) ? ((char**)((char*)data_douplep+data_offset))[i] : ret;
+                        tmp_ch = (i != optlen) ? (char*)((char*)data_douplep+(i*data_blk_sz)+data_offset) : ret;
                         if(strstr(tmp_ch, ret)){
                               found_m = 1;
 
