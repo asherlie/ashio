@@ -124,8 +124,10 @@ char* tab_complete(void* data_douplep, int data_offset, int optlen, char iter_op
                               if(select)break;
                               continue;
                         }
-                        else if(i == optlen-1 && !found_m)
+                        else if(i == optlen-1 && !found_m){
+                              select = 1;
                               break;
+                        }
                   }
             }
       }
