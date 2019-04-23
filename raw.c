@@ -88,23 +88,20 @@ char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int opt
             int maxlen = *bytes_read, tmplen;
             while(!select){
                   for(int i = 0; i <= optlen; ++i){
-                        /* we treat i == optlen as input string
-                         */
-                        tmp_ch = (i != optlen) ? (char*)((char*)data_douplep+(i*data_blk_sz)+data_offset) : ret;
-
+                        /* we treat i == optlen as input string */
                         if(i == optlen)tmp_ch = ret;
                         else{
                               void* inter = ((char*)data_douplep+(i*data_blk_sz)+data_offset);
+
+                              /* can't exactly remember this logic -- kinda hard to reason about */
                               if(data_blk_sz == sizeof(char*))tmp_ch = *((char**)inter);
                               else tmp_ch = (char*)inter;
                         }
                         if(strstr(tmp_ch, ret)){
                               found_m = 1;
 
-                              /* printing match to screen and removing chars from
-                               * old string
-                               */
-                              tmplen = strlen(tmp_ch);
+                              /* printing match to screen and removing chars from * old string */
+                              tmplen = (tmp_ch == ret) ? *bytes_read : strlen(tmp_ch);
                               putchar('\r');
                               printf("%s", tmp_ch);
                               if(tmplen > maxlen)maxlen = tmplen;
