@@ -74,7 +74,6 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
       return ret;
 }
 
-/*char* tab_complete(char** opts, int optlen){*/
 /* data_offset is offset into data where char* can be found
  * this is set to 0 if data_douplep is a char*
  */
@@ -92,6 +91,13 @@ char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int opt
                         /* we treat i == optlen as input string
                          */
                         tmp_ch = (i != optlen) ? (char*)((char*)data_douplep+(i*data_blk_sz)+data_offset) : ret;
+
+                        if(i == optlen)tmp_ch = ret;
+                        else{
+                              void* inter = ((char*)data_douplep+(i*data_blk_sz)+data_offset);
+                              if(data_blk_sz == sizeof(char*))tmp_ch = *((char**)inter);
+                              else tmp_ch = (char*)inter;
+                        }
                         if(strstr(tmp_ch, ret)){
                               found_m = 1;
 
@@ -111,7 +117,7 @@ char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int opt
                               while(((ch = getc(stdin)))){
                                     if(ch == '\r'){
                                           *bytes_read = tmplen;
-                                          free(ret);
+                                          if(ret != tmp_ch)free(ret);
                                           ret = tmp_ch;
                                           select = 1;
                                           break;
