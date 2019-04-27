@@ -1,0 +1,45 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include "ashio.h"
+
+struct x{
+      int a, b, c;
+      double d;
+      char some_string[10];
+      float some_other_entry;
+};
+
+int main(){
+      struct x* x_arr = calloc(5, sizeof(struct x));
+
+      strncpy(x_arr[0].some_string, "zero", 4);
+      strncpy(x_arr[1].some_string, "one", 3);
+      strncpy(x_arr[2].some_string, "two", 3);
+      strncpy(x_arr[3].some_string, "three", 5);
+      strncpy(x_arr[4].some_string, "four", 4);
+
+      int length;
+      _Bool free_s;
+
+      char* str = tab_complete(
+                  /* data pointer */
+                  x_arr,
+                  /* size of each block of data */
+                  sizeof(struct x),
+                  /* offset into each entry to char* */
+                  (char*)x_arr[0].some_string-(char*)&x_arr[0],
+                  /* n options */
+                  5,
+                  /* iterate through options with 'n' */
+                  'n',
+
+                  &length,
+                  &free_s
+                  );
+
+      printf("\n%i %s\n", length, str);
+      if(free_s)free(str);
+      free(x_arr);
+}
