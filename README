@@ -1,12 +1,15 @@
 ashio includes two functions for reading from stdin
 
 
-char* getline_raw(int* bytes_read, _Bool* tab) reads lines from stdin with
+char* getline_raw(int* bytes_read, _Bool* tab, int* ignore) reads lines from stdin with
 the terminal in raw mode
 
 *bytes_read is set to the length of the input in
 *tab is set to 1 if input was terminated with a tab character - this is help
 ful for implementing tab completion
+
+ignore can optionally be set to an int* containing a 0 terminated list of characters to
+ignore
 
 the char* returned by getline_raw() should be freed
 
