@@ -82,6 +82,9 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
 char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int optlen,
                    char iter_opts, int* bytes_read, _Bool* free_s){
       _Bool tab, found_m;
+      /* this should be called until enter is sent
+       * results should be appeded to a master string
+       */
       char* ret = getline_raw(bytes_read, &tab, NULL), * tmp_ch;
       *free_s = 0;
       if(tab && data_douplep){
@@ -114,6 +117,12 @@ char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int opt
 
                               char ch;
                               while(((ch = getc(stdin)))){
+                                    if(ch == 3){
+                                          if(*free_s)free(ret);
+                                          ret = NULL;
+                                          select = 1;
+                                          break;
+                                    }
                                     if(ch == '\r'){
                                           *bytes_read = tmplen;
                                           if(ret != tmp_ch){
