@@ -1,12 +1,12 @@
 #if 0
 compilation:
-gcc example.c raw.c -o ex
+gcc example.c ashio.c -o ex
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "raw.h"
+#include "ashio.h"
 
 int main(int a, char** b){
       int sz;
