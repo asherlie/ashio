@@ -1,4 +1,6 @@
 CC= gcc
+# -I. is added because exmple files are in a different directory
+#  than ashio.c
 CFLAGS= -Wall -Wextra -Wpedantic -O3 -I.
 
 all: test
@@ -12,4 +14,4 @@ test:
 
 .PHONY:
 clean:
-	rm ex ex_str
+	rm -f ex ex_str
