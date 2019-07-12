@@ -186,3 +186,34 @@ char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int opt
       }
       return ret;
 }
+
+/* experimental struct tabcom code below */
+
+struct tabcom* init_tabcom(struct tabcom* tbc){
+      if(!tbc)tbc = malloc(sizeof(struct tabcom));
+      tbc->n = 0;
+      tbc->cap = 5;
+      tbc->tbce = malloc(sizeof(struct tabcom_entry)*tbc->cap);
+      return tbc;
+}
+
+void free_tabcom(struct tabcom* tbc){
+      free(tbc->tbce);
+}
+
+void insert_tabcom(struct tabcom* tbc, void* data_douplep, int data_blk_sz, int data_offset, int optlen){
+      if(tbc->n == tbc->cap){
+            tbc->cap *= 2;
+            struct tabcom_entry* tmp_tbce = malloc(sizeof(struct tabcom_entry)*tbc->cap);
+            memcpy(tmp_tbce, tbc->tbce, sizeof(struct tabcom_entry)*tbc->n);
+            free(tbc->tbce);
+            tbc->tbce = tmp_tbce;
+      }
+
+      tbc->tbce[tbc->n].data_douplep = data_douplep;
+      tbc->tbce[tbc->n].data_blk_sz = data_blk_sz;
+      tbc->tbce[tbc->n].data_offset = data_offset;
+      tbc->tbce[tbc->n++].optlen = optlen;
+}
+
+char* tab_complete_tbc(struct tabcom tbc, char iter_opts, int* bytes_read, _Bool* free_s);
