@@ -216,4 +216,82 @@ void insert_tabcom(struct tabcom* tbc, void* data_douplep, int data_blk_sz, int 
       tbc->tbce[tbc->n++].optlen = optlen;
 }
 
-char* tab_complete_tbc(struct tabcom tbc, char iter_opts, int* bytes_read, _Bool* free_s);
+char* tab_complete_tbc(struct tabcom* tbc, char iter_opts, int* bytes_read, _Bool* free_s){
+      _Bool tab, found_m;
+      /* this should be called until enter is sent
+       * results should be appeded to a master string
+       */
+      char* ret = getline_raw(bytes_read, &tab, NULL), * tmp_ch;
+      *free_s = 1;
+      if(tab && tbc){
+            found_m = 0;
+            _Bool select = 0;
+            int maxlen = *bytes_read, tmplen;
+            while(!select){
+                  for(int tbc_i = 0; tbc_i < tbc->n; ++tbc_i){
+                        for(int i = 0; i <= tbc->tbce[tbc_i].optlen; ++i){
+                              /* we treat i == optlen as input string */
+                              if(i == tbc->tbce[tbc_i].optlen){
+                                    if(tbc_i != tbc->n-1)continue;
+                                    tmp_ch = ret;
+                              }
+                              else{
+                                    void* inter = ((char*)tbc->tbce[tbc_i].data_douplep+(i*tbc->tbce[tbc_i].data_blk_sz)+tbc->tbce[tbc_i].data_offset);
+
+                                    /* can't exactly remember this logic -- kinda hard to reason about */
+                                    if(tbc->tbce[tbc_i].data_blk_sz == sizeof(char*))tmp_ch = *((char**)inter);
+                                    else tmp_ch = (char*)inter;
+                              }
+                              if(strstr(tmp_ch, ret)){
+                                    found_m = 1;
+
+                                    /* printing match to screen and removing chars from * old string */
+                                    tmplen = (tmp_ch == ret) ? *bytes_read : (int)strlen(tmp_ch);
+                                    putchar('\r');
+                                    printf("%s", tmp_ch);
+                                    if(tmplen > maxlen)maxlen = tmplen;
+                                    for(int j = 0; j < maxlen-tmplen; ++j)putchar(' ');
+                                    putchar('\r');
+
+                                    /* should we ever exit raw mode during this process? */
+                                    raw_mode();
+
+                                    char ch;
+                                    while(((ch = getc(stdin)))){
+                                          if(ch == 3){
+                                                if(*free_s)free(ret);
+                                                ret = NULL;
+                                                select = 1;
+                                                break;
+                                          }
+                                          if(ch == '\r'){
+                                                *bytes_read = tmplen;
+                                                if(ret != tmp_ch){
+                                                      free(ret);
+                                                      *free_s = 0;
+                                                      ret = tmp_ch;
+                                                }
+                                                select = 1;
+                                                break;
+                                          }
+                                          if(ch == iter_opts)break;
+                                          /*goto more_chars;*/
+                                    }
+
+                                    reset_term();
+
+                                    if(select)break;
+                                    continue;
+                              }
+                              /* TODO: in this case, allow user to enter more chars */
+                              /* possible implementation below */
+                              else if(i == tbc->tbce[tbc_i].optlen-1 && !found_m){
+                                    select = 1;
+                                    break;
+                              }
+                        }
+                  }
+            }
+      }
+      return ret;
+}
