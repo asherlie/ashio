@@ -27,7 +27,7 @@ int main(int a, char** b){
       puts("enter tab to trigger auto completion and 'n' to iterate through options");
 
       _Bool free_s;
-      while((ln = tab_complete_tbc(&tbc, 'n', &sz, &free_s))){
+      while((ln = tab_complete(&tbc, 'n', &sz, &free_s))){
             printf("\n%i %s\n", sz, ln);
             if(free_s)free(ln);
       }

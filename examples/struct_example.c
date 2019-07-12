@@ -35,7 +35,7 @@ int main(){
                   /* n options */
                   5);
 
-      char* str = tab_complete_tbc(&tbc, /* iterate through options with 'n' */ 'n', &length, &free_s);
+      char* str = tab_complete(&tbc, /* iterate through options with 'n' */ 'n', &length, &free_s);
 
       printf("\n%i %s\n", length, str);
       if(free_s)free(str);
