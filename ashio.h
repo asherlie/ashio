@@ -5,4 +5,5 @@ char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int opt
                    char iter_opts, int* bytes_read, _Bool* free_s);
 
 struct tabcom{
+      int placeholder;
 };
