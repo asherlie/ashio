@@ -29,6 +29,7 @@ int main(int a, char** b){
       char* ln;
 
       puts("enter tab to trigger auto completion and 'n' to iterate through options");
+
       _Bool free_s;
 
       struct tabcom tbc;
