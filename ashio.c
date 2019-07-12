@@ -289,6 +289,7 @@ char* tab_complete_tbc(struct tabcom* tbc, char iter_opts, int* bytes_read, _Boo
                                     select = 1;
                                     break;
                               }
+                        if(select)break;
                         }
                   }
             }
