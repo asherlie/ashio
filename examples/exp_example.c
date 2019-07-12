@@ -1,6 +1,6 @@
 #if 0
 compilation:
-gcc example.c ashio.c -o ex
+gcc exp_example.c ashio.c -o ex
 #endif
 
 #include <stdio.h>
@@ -17,7 +17,7 @@ struct x{
 };
 
 int main(int a, char** b){
-      struct x* x_arr = calloc(6, sizeof(struct x));
+      struct x* x_arr = calloc(5, sizeof(struct x));
 
       strncpy(x_arr[0].some_string, "zero", 4+1);
       strncpy(x_arr[1].some_string, "one", 3+1);

@@ -88,12 +88,6 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
       return ret;
 }
 
-/* TODO:
- * the tab completion function can take in a new type of struct pointer 
- * gen_tabcom_struct() will generate these structs from buffers
- * multiple sources can be used for each tab completion
- */
-
 /* data_offset is offset into data where char* can be found
  * this is set to 0 if data_douplep is a char*
  */
@@ -289,7 +283,7 @@ char* tab_complete_tbc(struct tabcom* tbc, char iter_opts, int* bytes_read, _Boo
                                     select = 1;
                                     break;
                               }
-                        if(select)break;
+                              if(select)break;
                         }
                   }
             }
