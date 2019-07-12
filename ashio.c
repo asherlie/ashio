@@ -18,9 +18,23 @@ void reset_term(){
       tcsetattr(0, TCSANOW, &def);
 }
 
+/*
+ * TODO: possibly implement python style tab completion
+ * where they show up at the same time
+ * i can check for screen width
+ */
+
 /* reads a line from stdin until an \n is found or a tab is found 
  * returns NULL on ctrl-c
  */
+/* TODO: 
+ * getline_raw() should assume that the terminal is in raw mode
+ * it is too slow to put term in raw mode and back with each read
+ * from stdin
+ * especially when being used with tab_complete(), which requires
+ * the terminal to be in raw mode as well
+ */
+
 char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
       tcgetattr(0, &raw);
       tcgetattr(0, &def);
@@ -50,7 +64,7 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
                   break;
             }
             /* delete */
-            if(c == 127){
+            if(c == 8 || c == 127){
                   if(*bytes_read == 0)continue;
                   ret[--(*bytes_read)] = 0;
                   printf("\r%s%c\r%s", ret, ' ', ret);
@@ -73,6 +87,12 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
 
       return ret;
 }
+
+/* TODO:
+ * the tab completion function can take in a new type of struct pointer 
+ * gen_tabcom_struct() will generate these structs from buffers
+ * multiple sources can be used for each tab completion
+ */
 
 /* data_offset is offset into data where char* can be found
  * this is set to 0 if data_douplep is a char*
@@ -113,6 +133,7 @@ char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int opt
                               for(int i = 0; i < maxlen-tmplen; ++i)putchar(' ');
                               putchar('\r');
 
+                              /* should we ever exit raw mode during this process? */
                               raw_mode();
 
                               char ch;
@@ -134,6 +155,7 @@ char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int opt
                                           break;
                                     }
                                     if(ch == iter_opts)break;
+                                    /*goto more_chars;*/
                               }
 
                               reset_term();
@@ -142,7 +164,20 @@ char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int opt
                               continue;
                         }
                         /* TODO: in this case, allow user to enter more chars */
+                        /* possible implementation below */
                         else if(i == optlen-1 && !found_m){
+                              /*
+                               * int subbytes;
+                               * char* subcall = tab_complete(data_douplep, data_blk_sz, data_offset, optlen, iter_opts, &subbytes, free_s);
+                               * char* tmp = calloc(1, *bytes_read+subbytes);
+                               * memcpy(tmp, ret, *bytes_read);
+                               * memcpy(tmp+*bytes_read, subcall, subbytes);
+                               * free(subcall);
+                               * free(ret);
+                               * ret = tmp;
+                               * *bytes_read += subbytes;
+                               * printf("\r%s", ret);
+                               */
                               select = 1;
                               break;
                         }
