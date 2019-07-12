@@ -20,11 +20,19 @@ int main(int a, char** b){
             return 0;
       }
 
+      struct tabcom tbc;
+      init_tabcom(&tbc);
+      insert_tabcom(&tbc, b, sizeof(char*), 0, a);
+
       puts("enter tab to trigger auto completion and 'n' to iterate through options");
+
       _Bool free_s;
-      while((ln = tab_complete(b, sizeof(char*), 0, a, 'n', &sz, &free_s))){
+      while((ln = tab_complete_tbc(&tbc, 'n', &sz, &free_s))){
             printf("\n%i %s\n", sz, ln);
             if(free_s)free(ln);
       }
+
+      free_tabcom(&tbc);
+
       return 0;
 }

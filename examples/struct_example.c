@@ -23,7 +23,9 @@ int main(){
       int length;
       _Bool free_s;
 
-      char* str = tab_complete(
+      struct tabcom tbc;
+      init_tabcom(&tbc);
+      insert_tabcom(&tbc,
                   /* data pointer */
                   x_arr,
                   /* size of each block of data */
@@ -31,13 +33,9 @@ int main(){
                   /* offset into each entry to char* */
                   (char*)x_arr[0].some_string-(char*)&x_arr[0],
                   /* n options */
-                  5,
-                  /* iterate through options with 'n' */
-                  'n',
+                  5);
 
-                  &length,
-                  &free_s
-                  );
+      char* str = tab_complete_tbc(&tbc, /* iterate through options with 'n' */ 'n', &length, &free_s);
 
       printf("\n%i %s\n", length, str);
       if(free_s)free(str);
