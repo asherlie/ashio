@@ -35,7 +35,7 @@ void reset_term(){
  * the terminal to be in raw mode as well
  */
 
-char* getline_raw(char* base, int baselen, int* bytes_read, _Bool* tab, int* ignore){
+char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab, int* ignore){
       tcgetattr(0, &raw);
       tcgetattr(0, &def);
       cfmakeraw(&raw);
@@ -95,6 +95,10 @@ char* getline_raw(char* base, int baselen, int* bytes_read, _Bool* tab, int* ign
       return ret;
 }
 
+char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
+      return getline_raw_internal(NULL, 0, bytes_read, tab, ignore);
+}
+
 /* tabcom operations */
 
 struct tabcom* init_tabcom(struct tabcom* tbc){
@@ -139,7 +143,7 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
       /* this should be called until enter is sent
        * results should be appeded to a master string
        */
-      char* ret = getline_raw(base_str, bs_len, bytes_read, &tab, NULL), * tmp_ch = NULL;
+      char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), * tmp_ch = NULL;
       *free_s = 1;
       if(tab && tbc){
             _Bool select = 0;
