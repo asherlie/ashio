@@ -13,7 +13,7 @@ int main(int a, char** b){
       char* ln;
       if(a == 1){
             _Bool tab = 0;
-            while((ln = getline_raw(&sz, &tab, NULL))){
+            while((ln = getline_raw(NULL, 0, &sz, &tab, NULL))){
                   printf("\n%i %s\n", sz, ln);
                   free(ln);
             }
