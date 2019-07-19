@@ -205,9 +205,13 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
                                            * before we can recurse, though, we need to append ch to the string
                                            */
 
+                                          /* TODO: handle ch as delete or backspace key */
+                                          /* in this case, we'd need to shorten base_str_recurse
+                                           */
                                           char base_str_recurse[tmplen+1];
                                           memcpy(base_str_recurse, tmp_ch, tmplen);
                                           base_str_recurse[tmplen] = ch;
+                                          if(*free_s)free(ret);
 
                                           /* this is a pretty nice solution :) */
 

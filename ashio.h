@@ -1,4 +1,4 @@
-#define ASHIO_VER "1.1.0"
+#define ASHIO_VER "1.1.1"
 
 struct tabcom_entry{
       void* data_douplep;
