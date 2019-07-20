@@ -157,6 +157,9 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
             while(!select){
                   for(int tbc_i = 0; tbc_i < tbc->n; ++tbc_i){
                         for(int i = 0; i <= tbc->tbce[tbc_i].optlen; ++i){
+                              /* TODO: improve readability */
+                              /* select being set to 1 here indicates that we've received a ctrl-c */
+                              if(select)break;
                               /* we treat i == optlen of the last index of tbc as the input string */
                               if(i == tbc->tbce[tbc_i].optlen){
                                     /* setting tmp_ch to NULL to indicate that we should skip
@@ -226,9 +229,11 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
 
                                     reset_term();
 
+                                    /* TODO: improve readability */
                                     if(select)break;
                                     continue;
                               }
+                              /* TODO: improve readability */
                               /* TODO: is this necessary? */
                               if(select)break;
                         }
