@@ -40,4 +40,5 @@ int main(){
       printf("\n%i %s\n", length, str);
       if(free_s)free(str);
       free(x_arr);
+      free_tabcom(&tbc);
 }
