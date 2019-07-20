@@ -81,7 +81,8 @@ char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab,
                   printf("\r%s%c\r%s", ret, ' ', ret);
                   continue;
             }
-            if(*bytes_read == buf_sz){
+            /* buf_sz-1 to leave room for \0 */
+            if(*bytes_read == buf_sz-1){
                   buf_sz *= 2;
                   char* tmp_s = calloc(buf_sz, 1);
                   memcpy(tmp_s, ret, *bytes_read);
@@ -89,6 +90,7 @@ char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab,
                   ret = tmp_s;
             }
             ret[(*bytes_read)++] = c;
+            ret[*bytes_read] = 0;
             putchar(c);
       }
       /* before exiting, we restore term to its
@@ -157,6 +159,10 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
                         for(int i = 0; i <= tbc->tbce[tbc_i].optlen; ++i){
                               /* we treat i == optlen of the last index of tbc as the input string */
                               if(i == tbc->tbce[tbc_i].optlen){
+                                    /* setting tmp_ch to NULL to indicate that we should skip
+                                     * this index if the condition below is not met
+                                     */
+                                    tmp_ch = NULL;
                                     if(tbc_i == tbc->n-1)tmp_ch = ret;
                               }
                               else{
@@ -167,7 +173,7 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
                                     else tmp_ch = (char*)inter;
                                     /* printf("[%i][%i]: (%s, %s)\n", tbc_i, i, ret, tmp_ch); */
                               }
-                              if(strstr(tmp_ch, ret)){
+                              if(tmp_ch && strstr(tmp_ch, ret)){
                                     /* printing match to screen and removing chars from * old string */
                                     tmplen = (tmp_ch == ret) ? *bytes_read : (int)strlen(tmp_ch);
                                     putchar('\r');
