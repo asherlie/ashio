@@ -5,22 +5,41 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore) reads lines from std
 the terminal in raw mode
 
 *bytes_read is set to the length of the input in
-*tab is set to 1 if input was terminated with a tab character - this is help
-ful for implementing tab completion
+*tab is set to 1 if input was terminated with a tab character
 
-ignore can optionally be set to an int* containing a 0 terminated list of characters to
-ignore
+ignore can optionally be set to an int* containing a 0 terminated list of characters to ignore
 
 the char* returned by getline_raw() should be freed
 
 
-char* tab_complete(void* data_douplep, int data_blk_sz, int data_offset, int optlen,
-                   char iter_opts, int* bytes_read, _Bool* free_s);
+char* tab_complete(struct tabcom* tbc, char iter_opts, int* bytes_read, _Bool* free_s) similarly
+reads lines from stdin
+once a tab character is read by tab_complete(), the user can iterate through 
+matches from the struct tabcom* tbc with iter_opts
 
-data_offset is offset into data where char* can be found
-this is set to 0 if data_douplep is a char*
+if tbc is NULL, tab_complete() behaves ike getline_raw()
 
-data_douplep can be set to either a char** with data_blk_sz as sizeof(char*) and data_offset as 1
+the creation of a struct tabcom for usage with tab_complete() is done using init_tabcom() and insert_tabcom()
+a struct tabcom can contain arbitrarily many lists of options
+
+insert_tabcom() appends tabcom entries to a struct tabcom by keeping track of the base size, which would be sizeof(struct foo)
+if data is of type struct foo*
+as well as the offset into struct foo to a char*
+
+these are used to index into the data that is provided
+for this reason, tab_complete() can take in any list of items as options and is able to do so without any memory overhead
+
+insert_tabcom(struct tabcom* tbc, void* data_douplep, int data_blk_sz, int data_offset, int optlen)'s parameters are described below
+
+      tbc: struct tabcom* to insert entries into
+      data_douplep: list of data to search for strings within
+      data_blk_sz: size of each index/base size
+                   this is set to sizeof(char*) if data_douplep is a char**
+      data_offset: offset into data where char* can be found
+                   this is set to 0 if data_douplep is a char**
+      optlen: number of options - amount of indices in data_douplep
+
+data_douplep can be set to either a char** with data_blk_sz as sizeof(char*) and data_offset as 0
 or a struct x* with data_blk_sz sizeof(struct x) and data_offset as (x[0].str-x)
 
 the _Bool pointed to by free_s is set to 1 if returned buffer should be freed */
