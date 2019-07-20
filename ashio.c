@@ -74,7 +74,7 @@ char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab,
                   *tab = 1;
                   break;
             }
-            /* delete */
+            /* deletion */
             if(c == 8 || c == 127){
                   if(*bytes_read == 0)continue;
                   ret[--(*bytes_read)] = 0;
@@ -146,9 +146,6 @@ struct tabcom_entry pop_tabcom(struct tabcom* tbc){
 
 char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char iter_opts, int* bytes_read, _Bool* free_s){
       _Bool tab;
-      /* this should be called until enter is sent
-       * results should be appeded to a master string
-       */
       char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), * tmp_ch = NULL;
       *free_s = 1;
       if(tab && tbc){
@@ -200,6 +197,9 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
                                                 *bytes_read = tmplen;
                                                 if(ret != tmp_ch){
                                                       free(ret);
+                                                      /* if we're returning a string that wasn't allocated
+                                                       * by us, the user doesn't need to free it
+                                                       */
                                                       *free_s = 0;
                                                       ret = tmp_ch;
                                                 }
