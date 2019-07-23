@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <termios.h>
+#include <pthread.h>
 
 #include "ashio.h"
 
@@ -144,9 +145,43 @@ struct tabcom_entry pop_tabcom(struct tabcom* tbc){
       return tbc->tbce[--tbc->n];
 }
 
+/* returns a NULL terminated list strings */
+char** find_matches(struct tabcom* tbc, char* needle){
+      /* TODO: dynamically resize */
+      char** ret = malloc(sizeof(char*)*(tbc->n+2)), * tmp_ch;
+      int sz = 0;
+      for(int i = 0; i < tbc->n; ++i){
+            for(int j = 0; j < tbc->tbce[i].optlen; ++j){
+                  void* inter = ((char*)tbc->tbce[i].data_douplep+(j*tbc->tbce[i].data_blk_sz)+tbc->tbce[i].data_offset);
+
+                  /* can't exactly remember this logic -- kinda hard to reason about */
+                  if(tbc->tbce[i].data_blk_sz == sizeof(char*))tmp_ch = *((char**)inter);
+                  else tmp_ch = (char*)inter;
+
+                  if(strstr(tmp_ch, needle))ret[sz++] = tmp_ch;
+            }
+      }
+      ret[sz++] = needle;
+      ret[sz] = NULL;
+      return ret;
+}
+
+void narrow_matches(char** cpp, char* needle){
+      int ind = 0;
+      for(char** i = cpp; *i; ++i){
+            if(!strstr(*i, needle)){
+                  for(char** j = i; *j; ++j){
+                        *j = j[1];
+                  }
+            }
+            ++ind;
+      }
+}
+
 char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char iter_opts, int* bytes_read, _Bool* free_s){
       _Bool tab;
       char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), * tmp_ch = NULL;
+
       *free_s = 1;
       if(tab && tbc){
             _Bool select = 0;
@@ -173,6 +208,17 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
                                     else tmp_ch = (char*)inter;
                                     /* printf("[%i][%i]: (%s, %s)\n", tbc_i, i, ret, tmp_ch); */
                               }
+                              #if 0 
+                              should we first iterate through all strings and find all matches?
+                              this would make it very easy to iterate both backwards and forward
+                              the only thing is that it would take a lot of time to compute this initially
+                              
+                              we could do this original finding of matches in a separate thread!!
+                              this would also help to make this program more modular
+
+                              in this case if the user starts iterating while the structure is being built its nbd
+                              #endif
+
                               if(tmp_ch && strstr(tmp_ch, ret)){
                                     /* printing match to screen and removing chars from * old string */
                                     tmplen = (tmp_ch == ret) ? *bytes_read : (int)strlen(tmp_ch);
@@ -243,8 +289,109 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
       return ret;
 }
 
+char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* base_str, int bs_len, char iter_opts[2], int* bytes_read, _Bool* free_s){
+      /* TODO: each time we recurse check to see if any chars have been deleted
+       * should be easy we can just set a flag because we have to manually handle that
+       * anyway
+       * if(ch == wtvr)
+       * if so, narrow the existing char**
+       * implement a function to narrow possibly
+       *
+       * all narrowing and recreating/rescanning/initial scanning should be done in different threads
+       * this will allow 
+       *
+       * o fucc - i acutlly think this is important
+       * each time a character is entered we create an initial scan
+       * or maybe when strings with >= 2 chars are entered
+       *
+       * i can even create a complex system where each time a new char is appended we can add a new char** of
+       * adjustments to the base char** 
+       * each time a char is deleted from current stream we pop off the relevant char**
+       * until the base char** which was created from find_matches() has been removed
+       */
+      _Bool tab;
+      char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), ** tmp_str, ** match = NULL, ** end_ptr = NULL;
+
+      *free_s = 1;
+
+      if(tab && tbc){
+            match = find_matches(tbc, ret);
+
+            tmp_str = match;
+
+            int tmplen, maxlen = 0;
+            char ch = 0;
+            raw_mode();
+
+            while(1){
+
+                  if(!*tmp_str){
+                        end_ptr = tmp_str-1;
+                        tmp_str = match;
+                  }
+
+                  tmplen = strlen(*tmp_str);
+                  /* TODO: use prev_len not maxlen */
+                  if(maxlen < tmplen)maxlen = tmplen;
+
+                  printf("\r%s", *tmp_str);
+                  for(int j = 0; j < maxlen-tmplen; ++j)putchar(' ');
+                  putchar('\r');
+
+                  ch = getc(stdin);
+
+                  /* selection */
+                  if(ch == '\r'){
+                        /*printf("before entry: %s\n", *tmp_str);*/
+                        *bytes_read = tmplen;
+                        if(ret != *tmp_str){
+                              /* ret could be NULL if tab was first char received by getline_raw_internal() */
+                              if(ret)free(ret);
+                              *free_s = 0;
+                              ret = *tmp_str;
+                        }
+                        break;
+                  }
+
+                  if(ch == *iter_opts){
+                        ++tmp_str;
+                        continue;
+                  }
+                  if(ch == iter_opts[1]){
+                        if(tmp_str != match){
+                              --tmp_str;
+                              continue;
+                        }
+                        /* if we aren't aware of the last index of match */
+                        if(!end_ptr){
+                              /* tmp_str can't possibly be farther back than match */
+                              for(end_ptr = tmp_str; end_ptr[1]; ++end_ptr);
+                        }
+                        tmp_str = end_ptr;
+                        continue;
+                  }
+
+                  /* ctrl-c */
+                  if(ch == 3){
+                        if(*free_s)free(ret);
+                        ret = NULL;
+                        break;
+                  }
+
+            }
+
+            reset_term();
+
+      }
+      return ret;
+}
+
 /* tab_complete behaves like getline(), but does not include \n char in returned string */
 /* *free_s is set to 1 if returned buffer should be freed */
-char* tab_complete(struct tabcom* tbc, char iter_opts, int* bytes_read, _Bool* free_s){
-      return tab_complete_internal(tbc, NULL, 0, iter_opts, bytes_read, free_s);
+char* tab_complete(struct tabcom* tbc, char iter_opts[2], int* bytes_read, _Bool* free_s){
+      #if LOW_MEM
+      return tab_complete_internal(tbc, NULL, 0, *iter_opts, bytes_read, free_s);
+      #else
+      return tab_complete_internal_extra_mem_low_computation(tbc, NULL, 0, iter_opts, bytes_read, free_s);
+      #endif
 }

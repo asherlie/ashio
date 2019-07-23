@@ -1,5 +1,7 @@
 #define ASHIO_VER "1.1.3"
 
+#define LOW_MEM 1
+
 struct tabcom_entry{
       void* data_douplep;
       int data_blk_sz, data_offset, optlen;
@@ -26,4 +28,4 @@ void reset_term();
 
 char* getline_raw(int* bytes_read, _Bool* tab, int* ignore);
 
-char* tab_complete(struct tabcom* tbc, char iter_opts, int* bytes_read, _Bool* free_s);
+char* tab_complete(struct tabcom* tbc, char iter_opts[2], int* bytes_read, _Bool* free_s);
