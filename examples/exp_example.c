@@ -37,7 +37,8 @@ int main(int a, char** b){
       insert_tabcom(&tbc, b, sizeof(char*), 0, a);
       insert_tabcom(&tbc, x_arr, sizeof(struct x), (char*)x_arr[0].some_string-(char*)&x_arr[0], 5);
 
-      while((ln = tab_complete(&tbc, 'n', &sz, &free_s))){
+      char iter[2] = {'n', 'p'};
+      while((ln = tab_complete(&tbc, iter, &sz, &free_s))){
             printf("\n%i %s\n", sz, ln);
             if(free_s)free(ln);
       }
