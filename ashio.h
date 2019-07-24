@@ -1,6 +1,6 @@
-#define ASHIO_VER "1.1.3"
+#define ASHIO_VER "1.2.0"
 
-#define LOW_MEM 1
+#define LOW_MEM 0
 
 struct tabcom_entry{
       void* data_douplep;

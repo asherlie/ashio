@@ -145,10 +145,15 @@ struct tabcom_entry pop_tabcom(struct tabcom* tbc){
       return tbc->tbce[--tbc->n];
 }
 
+/* TODO: possibly add int* param that's set to n_entries */
 /* returns a NULL terminated list strings */
 char** find_matches(struct tabcom* tbc, char* needle){
       /* TODO: dynamically resize */
-      char** ret = malloc(sizeof(char*)*(tbc->n+2)), * tmp_ch;
+      int n_entries = 0;
+      for(int i = 0; i < tbc->n; ++i)
+            n_entries += tbc->tbce[i].optlen;
+      char** ret = malloc(sizeof(char*)*(n_entries+2)), * tmp_ch;
+
       int sz = 0;
       for(int i = 0; i < tbc->n; ++i){
             for(int j = 0; j < tbc->tbce[i].optlen; ++j){
@@ -300,7 +305,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
        * all narrowing and recreating/rescanning/initial scanning should be done in different threads
        * this will allow 
        *
-       * o fucc - i acutlly think this is important
+       * i actually think this is important
        * each time a character is entered we create an initial scan
        * or maybe when strings with >= 2 chars are entered
        *
@@ -312,7 +317,8 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
       _Bool tab;
       char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), ** tmp_str, ** match = NULL, ** end_ptr = NULL;
 
-      *free_s = 1;
+      /* ret is only nul lif ctrl c - ta*/
+      *free_s = ret;
 
       if(tab && tbc){
             match = find_matches(tbc, ret);
@@ -330,11 +336,14 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                         tmp_str = match;
                   }
 
+                  /*if ret is empty string and an option is chosen - big error*/
+
                   tmplen = strlen(*tmp_str);
                   /* TODO: use prev_len not maxlen */
                   if(maxlen < tmplen)maxlen = tmplen;
 
-                  printf("\r%s", *tmp_str);
+                  putchar('\r');
+                  printf("%s", *tmp_str);
                   for(int j = 0; j < maxlen-tmplen; ++j)putchar(' ');
                   putchar('\r');
 
@@ -346,6 +355,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                         *bytes_read = tmplen;
                         if(ret != *tmp_str){
                               /* ret could be NULL if tab was first char received by getline_raw_internal() */
+                              /*nvm only if ctrl c - first char tab sends ""*/
                               if(ret)free(ret);
                               *free_s = 0;
                               ret = *tmp_str;
