@@ -294,6 +294,12 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
       return ret;
 }
 
+void clear_line(int len, char* str){
+      printf("\r%s", str);
+      for(int j = 0; j < len; ++j)putchar(' ');
+      putchar('\r');
+}
+
 char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* base_str, int bs_len, char iter_opts[2], int* bytes_read, _Bool* free_s){
       /* TODO: each time we recurse check to see if any chars have been deleted
        * should be easy we can just set a flag because we have to manually handle that
@@ -340,10 +346,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                   /* TODO: use prev_len not maxlen */
                   if(maxlen < tmplen)maxlen = tmplen;
 
-                  putchar('\r');
-                  printf("%s", *tmp_str);
-                  for(int j = 0; j < maxlen-tmplen; ++j)putchar(' ');
-                  putchar('\r');
+                  clear_line(maxlen-tmplen, *tmp_str);
 
                   ch = getc(stdin);
 
@@ -378,7 +381,6 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                         tmp_str = end_ptr;
                         continue;
                   }
-
                   /* ctrl-c */
                   if(ch == 3){
                         if(*free_s)free(ret);
@@ -391,11 +393,21 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                   /* TODO: if ch == delete, recursing should occur with baselen = tmplen
                    * other changes must also be made in this case
                    */
+
+                  /* deletion */
+                  _Bool del = ch == 127 || ch == 8;
+
                   /* +1 for extra char, +1 for \0 */
-                  char recurse_str[tmplen+2];
+                  char recurse_str[tmplen+1+(del) ? 0 : 1];
                   memcpy(recurse_str, *tmp_str, tmplen);
-                  recurse_str[tmplen++] = ch;
-                  recurse_str[tmplen] = 0;
+                  if(del){
+                        clear_line(tmplen, "");
+                        recurse_str[--tmplen] = 0;
+                  }
+                  else{
+                        recurse_str[tmplen++] = ch;
+                        recurse_str[tmplen] = 0;
+                  }
                   if(*free_s)free(ret);
                   free(match);
 
