@@ -317,7 +317,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
       _Bool tab;
       char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), ** tmp_str, ** match = NULL, ** end_ptr = NULL;
 
-      /* ret is only nul lif ctrl c - ta*/
+      /* ret is only nul lif ctrl ctrl-a */
       *free_s = ret;
 
       if(tab && tbc){
@@ -335,8 +335,6 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                         end_ptr = tmp_str-1;
                         tmp_str = match;
                   }
-
-                  /*if ret is empty string and an option is chosen - big error*/
 
                   tmplen = strlen(*tmp_str);
                   /* TODO: use prev_len not maxlen */
@@ -392,6 +390,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
 
             reset_term();
 
+            free(match);
       }
       return ret;
 }
