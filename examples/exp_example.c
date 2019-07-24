@@ -35,7 +35,7 @@ int main(int a, char** b){
       struct tabcom tbc;
       init_tabcom(&tbc);
       insert_tabcom(&tbc, b, sizeof(char*), 0, a);
-      insert_tabcom(&tbc, x_arr, sizeof(struct x), (char*)x_arr[0].some_string-(char*)&x_arr[0], 5);
+      insert_tabcom(&tbc, x_arr, sizeof(struct x), (char*)&x_arr[0].some_string-(char*)&x_arr[0], 5);
 
       char iter[2] = {'n', 'p'};
       while((ln = tab_complete(&tbc, iter, &sz, &free_s))){

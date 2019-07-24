@@ -31,7 +31,7 @@ int main(){
                   /* size of each block of data */
                   sizeof(struct x),
                   /* offset into each entry to char* */
-                  (char*)x_arr[0].some_string-(char*)&x_arr[0],
+                  (char*)&x_arr[0].some_string-(char*)&x_arr[0],
                   /* n options */
                   5);
 
