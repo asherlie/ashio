@@ -386,6 +386,22 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                         break;
                   }
 
+                  /* if we've gotten this far it's time to recurse */
+
+                  /* TODO: if ch == delete, recursing should occur with baselen = tmplen
+                   * other changes must also be made in this case
+                   */
+                  /* +1 for extra char, +1 for \0 */
+                  char recurse_str[tmplen+2];
+                  memcpy(recurse_str, *tmp_str, tmplen);
+                  recurse_str[tmplen++] = ch;
+                  recurse_str[tmplen] = 0;
+                  if(*free_s)free(ret);
+                  free(match);
+
+                  reset_term();
+                  return tab_complete_internal_extra_mem_low_computation(tbc, recurse_str, tmplen, iter_opts, bytes_read, free_s);
+
             }
 
             reset_term();
