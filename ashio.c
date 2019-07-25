@@ -176,6 +176,7 @@ void narrow_matches(char** cpp, char* needle){
       for(char** i = cpp; *i; ++i){
             if(!strstr(*i, needle)){
                   for(char** j = i; *j; ++j){
+                        /* this should implicitly deal with moving over the NULL */
                         *j = j[1];
                   }
             }
@@ -294,13 +295,19 @@ char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char
       return ret;
 }
 
+_Bool n_char_equiv(char* x, char* y, int n){
+      for(int i = 0; i < n; ++i)
+            if(!x[i] || !y[i] || x[i] != y[i])return 0;
+      return 1;
+}
+
 void clear_line(int len, char* str){
       printf("\r%s", str);
       for(int j = 0; j < len; ++j)putchar(' ');
       putchar('\r');
 }
 
-char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* base_str, int bs_len, char iter_opts[2], int* bytes_read, _Bool* free_s){
+char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* base_str, int bs_len, char** base_match, char iter_opts[2], int* bytes_read, _Bool* free_s){
       /* TODO: each time we recurse check to see if any chars have been deleted
        * should be easy we can just set a flag because we have to manually handle that
        * anyway
@@ -323,11 +330,24 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
       _Bool tab;
       char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), ** tmp_str, ** match = NULL, ** end_ptr = NULL;
 
-      /* ret is only nul lif ctrl ctrl-a */
+      /* ret is only null if ctrl-c */
       *free_s = ret;
 
       if(tab && tbc){
-            match = find_matches(tbc, ret);
+            /*
+             *match = (base_match && base_str && bs_len && n_char_equiv(base_str, ret, bs_len)) ? base_match : find_matches(tbc, ret);
+             *if(base_match && base_match != match)free(base_match);
+             */
+
+            {
+            _Bool new_search = 1;
+            if(base_match){
+                  if(base_str && bs_len && n_char_equiv(base_str, ret, bs_len))
+                        match = base_match;
+                  else free(base_match);
+            }
+            if(new_search)match = find_matches(tbc, ret);
+            }
 
             tmp_str = match;
 
@@ -373,6 +393,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                               --tmp_str;
                               continue;
                         }
+                        /* TODO: find_matches should inform us of size of match */
                         /* if we aren't aware of the last index of match */
                         if(!end_ptr){
                               /* tmp_str can't possibly be farther back than match */
@@ -398,26 +419,51 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                   _Bool del = ch == 127 || ch == 8;
 
                   /* +1 for extra char, +1 for \0 */
-                  char recurse_str[tmplen+1+(del) ? 0 : 1];
+                  char recurse_str[tmplen+1+((del) ? 0 : 1)];
                   memcpy(recurse_str, *tmp_str, tmplen);
+      
+                  /*
+                   * we could keep an array of match char**s [tmplen, tmplen-1]
+                   * each time a deletion is made we go back a step
+                   */
+
                   if(del){
                         clear_line(tmplen, "");
                         recurse_str[--tmplen] = 0;
+                        /* delete makes match useless for recurse */
+                        free(match);
+                        match = NULL;
                   }
                   else{
+                        if(!end_ptr)
+                              for(end_ptr = tmp_str; end_ptr[1]; ++end_ptr);
                         recurse_str[tmplen++] = ch;
                         recurse_str[tmplen] = 0;
+                        /* adjusting the last index of match to user input */
+                        *end_ptr = malloc(tmplen);
+                        memcpy(*end_ptr, recurse_str, tmplen);
+
+                        narrow_matches(match, recurse_str);
                   }
                   if(*free_s)free(ret);
-                  free(match);
 
                   reset_term();
-                  return tab_complete_internal_extra_mem_low_computation(tbc, recurse_str, tmplen, iter_opts, bytes_read, free_s);
+                  /* TODO: URGENT: if del we can generate matches by doing it in a new thread here instead of in the next recurse
+                   * this will be a bit tricky to make work between the fucntions though because if getline raw deletes we need to
+                   * disqualify this too
+                   * we can have a lock that will wait once tabcom internal is entered and this generation isn't yet done
+                   * this takes advantage of the time spent in user timescale waiting for input
+                   * it's very unlikely that finding matches will take longer than user input
+                   * even if user deletes chars in getline, we're no worse off
+                   * high memory usage but should be very fast
+                   */
+                  return tab_complete_internal_extra_mem_low_computation(tbc, recurse_str, tmplen, match, iter_opts, bytes_read, free_s);
 
             }
 
             reset_term();
 
+            /*if(base_match && *end_ptr)free(*end_ptr);*/
             free(match);
       }
       return ret;
@@ -429,6 +475,6 @@ char* tab_complete(struct tabcom* tbc, char iter_opts[2], int* bytes_read, _Bool
       #if LOW_MEM
       return tab_complete_internal(tbc, NULL, 0, *iter_opts, bytes_read, free_s);
       #else
-      return tab_complete_internal_extra_mem_low_computation(tbc, NULL, 0, iter_opts, bytes_read, free_s);
+      return tab_complete_internal_extra_mem_low_computation(tbc, NULL, 0, NULL, iter_opts, bytes_read, free_s);
       #endif
 }

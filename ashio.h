@@ -1,4 +1,4 @@
-#define ASHIO_VER "1.2.3"
+#define ASHIO_VER "1.2.4"
 
 #define LOW_MEM 0
 
