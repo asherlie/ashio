@@ -179,6 +179,7 @@ void narrow_matches(char** cpp, char* needle){
                         /* this should implicitly deal with moving over the NULL */
                         *j = j[1];
                   }
+                  --i;
             }
             ++ind;
       }
