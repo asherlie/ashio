@@ -329,24 +329,23 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
        */
       _Bool tab;
       char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), ** tmp_str, ** match = NULL, ** end_ptr = NULL;
-
       /* ret is only null if ctrl-c */
       *free_s = ret;
 
       if(tab && tbc){
-            /*
-             *match = (base_match && base_str && bs_len && n_char_equiv(base_str, ret, bs_len)) ? base_match : find_matches(tbc, ret);
-             *if(base_match && base_match != match)free(base_match);
-             */
 
             {
             _Bool new_search = 1;
             if(base_match){
-                  if(base_str && bs_len && n_char_equiv(base_str, ret, bs_len))
+                  if(base_str && bs_len && n_char_equiv(base_str, ret, bs_len)){
                         match = base_match;
-                  else free(base_match);
+                        new_search = 0;
+                  }
             }
-            if(new_search)match = find_matches(tbc, ret);
+            if(new_search){
+                  if(base_match)free(base_match);
+                  match = find_matches(tbc, ret);
+            }
             }
 
             tmp_str = match;
@@ -372,11 +371,8 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
 
                   /* selection */
                   if(ch == '\r'){
-                        /*printf("before entry: %s\n", *tmp_str);*/
                         *bytes_read = tmplen;
                         if(ret != *tmp_str){
-                              /* ret could be NULL if tab was first char received by getline_raw_internal() */
-                              /*nvm only if ctrl c - first char tab sends ""*/
                               if(ret)free(ret);
                               *free_s = 0;
                               ret = *tmp_str;
