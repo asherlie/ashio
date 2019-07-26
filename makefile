@@ -1,7 +1,7 @@
 CC= gcc
 # -I. is added because exmple files are in a different directory
 #  than ashio.c
-CFLAGS= -Wall -Wextra -Wpedantic -O3 -I. -g
+CFLAGS= -lpthread -Wall -Wextra -Wpedantic -O3 -I. -g
 
 all: example
 ex: ashio.c examples/example.c

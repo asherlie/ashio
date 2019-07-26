@@ -9,7 +9,6 @@
 #include "ashio.h"
 
 struct termios def, raw;
-pthread_mutex_t match_gen_lock;
 
 void raw_mode(){
       tcsetattr(0, TCSANOW, &raw);
@@ -181,10 +180,8 @@ struct find_matches_arg{
 
 void* find_matches_pth(void* fma_v){
       struct find_matches_arg* fma = (struct find_matches_arg*)fma_v;
-      pthread_mutex_lock(&match_gen_lock);
       *fma->ret = find_matches(fma->tbc, fma->needle);
-      pthread_mutex_unlock(&match_gen_lock);
-      return NULL;
+      pthread_exit(EXIT_SUCCESS);
 }
 
 void narrow_matches(char** cpp, char* needle){
@@ -324,7 +321,9 @@ void clear_line(int len, char* str){
       putchar('\r');
 }
 
-char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* base_str, int bs_len, char** base_match, char iter_opts[2], int* bytes_read, _Bool* free_s){
+pthread_t fmp;
+
+char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* base_str, int bs_len, char*** base_match, char iter_opts[2], int* bytes_read, _Bool* free_s){
       /* TODO: each time we recurse check to see if any chars have been deleted
        * should be easy we can just set a flag because we have to manually handle that
        * anyway
@@ -354,11 +353,13 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
             {
             _Bool new_search = 1;
             if(base_match){
+                  pthread_join(fmp, NULL);
                   /* n_char_equiv is essentially checking if chars have been removed in getline_raw() */
                   if(base_str && bs_len && n_char_equiv(base_str, ret, bs_len)){
-                        pthread_mutex_lock(&match_gen_lock);
-                        match = base_match;
-                        pthread_mutex_unlock(&match_gen_lock);
+                        /*pthread_mutex_lock(&match_gen_lock);*/
+                        match = *base_match;
+                        /*pthread_mutex_unlock(&match_gen_lock);*/
+                        new_search = !*match;
                         new_search = 0;
                   }
             }
@@ -366,9 +367,9 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                   /* this should only happen when chars have been deleted */
                   if(base_match){
                         /* locking here in case the find_matches() thread is still working on match */
-                        pthread_mutex_lock(&match_gen_lock);
-                        free(base_match);
-                        pthread_mutex_unlock(&match_gen_lock);
+                        /*pthread_mutex_lock(&match_gen_lock);*/
+                        free(*base_match);
+                        /*pthread_mutex_unlock(&match_gen_lock);*/
                   }
                   match = find_matches(tbc, ret);
             }
@@ -383,8 +384,12 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
             while(1){
 
                   if(!*tmp_str){
-                        end_ptr = tmp_str-1;
-                        tmp_str = match;
+                        if(tmp_str != match)tmp_str = match;
+                        /* there are no matches 
+                         * this should never happen
+                         * TODO: handle this
+                         */
+                        else {}
                   }
 
                   tmplen = strlen(*tmp_str);
@@ -452,16 +457,24 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                   if(del){
                         clear_line(tmplen, "");
                         recurse_str[--tmplen] = 0;
-                        /* delete makes match useless for recurse */
+                        /* deletion makes match useless for recurse */
                         free(match);
 
+                        /* we're generating matches in a new thread before we make next
+                         * recursive call
+                         * it's safe to assume that matches will be found before geline_raw() returns
+                         * in the next call to tab_complete_internal_extra_mem_low_computation()
+                         * otherwise, we wait for the find match thread to join
+                         */
                         struct find_matches_arg fma;
+                        /* reason it's here needs to be upheld tho
+                         * find_matches() sets the last index of its return
+                         * to needle - is it ok for needle to be on the stack
+                         */
                         fma.needle = recurse_str;
                         fma.tbc = tbc;
                         fma.ret = &match;
-                        pthread_t fmp;
                         pthread_create(&fmp, NULL, &find_matches_pth, &fma);
-                        pthread_detach(fmp);
                   }
                   else{
                         if(!end_ptr)
@@ -477,16 +490,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                   if(*free_s)free(ret);
 
                   reset_term();
-                  /* TODO: URGENT: if del we can generate matches by doing it in a new thread here instead of in the next recurse
-                   * this will be a bit tricky to make work between the fucntions though because if getline raw deletes we need to
-                   * disqualify this too
-                   * we can have a lock that will wait once tabcom internal is entered and this generation isn't yet done
-                   * this takes advantage of the time spent in user timescale waiting for input
-                   * it's very unlikely that finding matches will take longer than user input
-                   * even if user deletes chars in getline, we're no worse off
-                   * high memory usage but should be very fast
-                   */
-                  return tab_complete_internal_extra_mem_low_computation(tbc, recurse_str, tmplen, match, iter_opts, bytes_read, free_s);
+                  return tab_complete_internal_extra_mem_low_computation(tbc, recurse_str, tmplen, &match, iter_opts, bytes_read, free_s);
 
             }
 
@@ -504,10 +508,7 @@ char* tab_complete(struct tabcom* tbc, char iter_opts[2], int* bytes_read, _Bool
       #if LOW_MEM
       return tab_complete_internal(tbc, NULL, 0, *iter_opts, bytes_read, free_s);
       #else
-      /* TODO: mutex should not be initialized and destroyed with each call of tab_complete() */
-      pthread_mutex_init(&match_gen_lock, NULL);
       char* ret = tab_complete_internal_extra_mem_low_computation(tbc, NULL, 0, NULL, iter_opts, bytes_read, free_s);
-      pthread_mutex_destroy(&match_gen_lock);
       return ret;
       #endif
 }
