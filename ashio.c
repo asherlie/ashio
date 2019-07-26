@@ -110,7 +110,7 @@ char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
 
 struct tabcom* init_tabcom(struct tabcom* tbc){
       if(!tbc)tbc = malloc(sizeof(struct tabcom));
-      tbc->n = 0;
+      tbc->n_flattened = tbc->n = 0;
       tbc->cap = 5;
       tbc->tbce = malloc(sizeof(struct tabcom_entry)*tbc->cap);
       return tbc;
@@ -124,6 +124,7 @@ void free_tabcom(struct tabcom* tbc){
  * this is set to 0 if data_douplep is a char*
  */
 int insert_tabcom(struct tabcom* tbc, void* data_douplep, int data_blk_sz, int data_offset, int optlen){
+      tbc->n_flattened += optlen;
       int ret = 1;
       if(tbc->n == tbc->cap){
             ++ret;
@@ -142,6 +143,7 @@ int insert_tabcom(struct tabcom* tbc, void* data_douplep, int data_blk_sz, int d
 }
 
 struct tabcom_entry pop_tabcom(struct tabcom* tbc){
+      tbc->n_flattened -= tbc->tbce[tbc->n-1].optlen;
       return tbc->tbce[--tbc->n];
 }
 
