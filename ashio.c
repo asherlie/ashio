@@ -514,8 +514,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, struct
                         /* TODO: is it a safe assumption that the last index of match
                          * will always be user input 
                          */
-                        /* TODO: free this */
-                        match[n_matches-1] = malloc(tmplen);
+                        track_str(shared, (match[n_matches-1] = malloc(tmplen)));
                         memcpy(match[n_matches-1], recurse_str, tmplen);
 
                         shared->n_matches = n_matches-narrow_matches(match, recurse_str);
@@ -532,6 +531,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, struct
             /*if(base_match && *end_ptr)free(*end_ptr);*/
             free(match);
       }
+      free_tracked(shared);
       return ret;
 }
 
