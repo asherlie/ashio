@@ -331,16 +331,33 @@ struct shared_d{
       int n_matches;
 
       /* these fields are used to keep track of malloc'd strings that need to be freed */
-      int n_free;
+      int n_free, cap_free;
       char** cp_free;
 };
 
-void track_str(struct shared_d* shared){
-      (void)shared;
+void init_shared(struct shared_d* shared){
+      shared->thread_spawned = 0;
+      shared->n_matches = 0;
+      shared->n_free = 0;
+      shared->cap_free = 10;
+      shared->cp_free = malloc(shared->cap_free*sizeof(char*));
+}
+
+void track_str(struct shared_d* shared, char* str){
+      if(shared->n_free == shared->cap_free){
+            shared->cap_free *= 2;
+            char** tmp_free = malloc(shared->cap_free*sizeof(char*));
+            memcpy(tmp_free, shared->cp_free, sizeof(char*)*shared->n_free);
+            free(shared->cp_free);
+            shared->cp_free = tmp_free;
+      }
+      shared->cp_free[shared->n_free++] = str;
 }
 
 void free_tracked(struct shared_d* shared){
-      (void)shared;
+      for(int i = 0; i < shared->n_free; ++i)
+            free(shared->cp_free[i]);
+      free(shared->cp_free);
 }
 
 pthread_t fmp;
@@ -525,8 +542,7 @@ char* tab_complete(struct tabcom* tbc, char iter_opts[2], int* bytes_read, _Bool
       return tab_complete_internal(tbc, NULL, 0, *iter_opts, bytes_read, free_s);
       #else
       struct shared_d shared;
-      shared.thread_spawned = 0;
-      shared.n_matches = 0;
+      init_shared(&shared);
       char* ret = tab_complete_internal_extra_mem_low_computation(tbc, &shared, NULL, 0, NULL, iter_opts, bytes_read, free_s);
       return ret;
       #endif
