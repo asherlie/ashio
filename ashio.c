@@ -148,10 +148,8 @@ struct tabcom_entry pop_tabcom(struct tabcom* tbc){
       return tbc->tbce[--tbc->n];
 }
 
-/* TODO: possibly add int* param that's set to n_entries */
-/* returns a NULL terminated list strings */
+/* returns a NULL terminated list of strings of size *n_matches */
 char** find_matches(struct tabcom* tbc, char* needle, int* n_matches){
-      /* TODO: ret can be of size +1 if the user will always know the size */
       /* TODO: dynamically resize */
       char** ret = malloc(sizeof(char*)*(tbc->n_flattened+2)), * tmp_ch;
 
@@ -168,7 +166,7 @@ char** find_matches(struct tabcom* tbc, char* needle, int* n_matches){
             }
       }
       ret[sz++] = needle;
-      ret[sz] = NULL;
+      ret[sz] = 0;
       *n_matches = sz;
       return ret;
 }
@@ -194,7 +192,7 @@ int narrow_matches(char** cpp, char* needle){
             if(!strstr(*i, needle)){
                   ++n_removed;
                   for(char** j = i; *j; ++j){
-                        /* this should implicitly deal with moving over the NULL */
+                        /* this implicitly deals with moving over the NULL */
                         *j = j[1];
                   }
                   --i;
@@ -373,7 +371,6 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, struct
                    */
                   if(base_str && bs_len && n_char_equiv(base_str, ret, bs_len)){
                         match = *base_match;
-                        new_search = !*match;
                         new_search = 0;
                         /* last index of match must be overwritten to be user input */
                         match[n_matches-1] = ret;
@@ -488,6 +485,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, struct
                         /* TODO: is it a safe assumption that the last index of match
                          * will always be user input 
                          */
+                        /* TODO: free this */
                         match[n_matches-1] = malloc(tmplen);
                         /**end_ptr = malloc(tmplen);*/
                         /*memcpy(*end_ptr, recurse_str, tmplen);*/
