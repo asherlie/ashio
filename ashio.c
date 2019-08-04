@@ -149,12 +149,10 @@ struct tabcom_entry pop_tabcom(struct tabcom* tbc){
 
 /* TODO: possibly add int* param that's set to n_entries */
 /* returns a NULL terminated list strings */
-char** find_matches(struct tabcom* tbc, char* needle){
+char** find_matches(struct tabcom* tbc, char* needle, int* n_matches){
+      /* TODO: ret can be of size +1 if the user will always know the size */
       /* TODO: dynamically resize */
-      int n_entries = 0;
-      for(int i = 0; i < tbc->n; ++i)
-            n_entries += tbc->tbce[i].optlen;
-      char** ret = malloc(sizeof(char*)*(n_entries+2)), * tmp_ch;
+      char** ret = malloc(sizeof(char*)*(tbc->n_flattened+2)), * tmp_ch;
 
       int sz = 0;
       for(int i = 0; i < tbc->n; ++i){
@@ -170,6 +168,7 @@ char** find_matches(struct tabcom* tbc, char* needle){
       }
       ret[sz++] = needle;
       ret[sz] = NULL;
+      *n_matches = sz;
       return ret;
 }
 
@@ -182,7 +181,9 @@ struct find_matches_arg{
 
 void* find_matches_pth(void* fma_v){
       struct find_matches_arg* fma = (struct find_matches_arg*)fma_v;
-      *fma->ret = find_matches(fma->tbc, fma->needle);
+      int n_matches;
+      *fma->ret = find_matches(fma->tbc, fma->needle, &n_matches);
+      return (void*)n_matches;
       pthread_exit(EXIT_SUCCESS);
 }
 
@@ -323,9 +324,13 @@ void clear_line(int len, char* str){
       putchar('\r');
 }
 
+struct shared_d{
+      _Bool thread_spawned;
+};
+
 pthread_t fmp;
 
-char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* base_str, int bs_len, char*** base_match, char iter_opts[2], int* bytes_read, _Bool* free_s){
+char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, struct shared_d* shared, char* base_str, int bs_len, char*** base_match, char iter_opts[2], int* bytes_read, _Bool* free_s){
       /* TODO: each time we recurse check to see if any chars have been deleted
        * should be easy we can just set a flag because we have to manually handle that
        * anyway
@@ -352,10 +357,15 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
 
       if(tab && tbc){
 
+            int n_matches;
+
             {
             _Bool new_search = 1;
             if(base_match){
-                  pthread_join(fmp, NULL);
+                  if(shared->thread_spawned){
+                        pthread_join(fmp, (void*)&n_matches);
+                        shared->thread_spawned = 0;
+                  }
                   /* n_char_equiv is essentially checking if chars have been removed in getline_raw() */
                   if(base_str && bs_len && n_char_equiv(base_str, ret, bs_len)){
                         /*pthread_mutex_lock(&match_gen_lock);*/
@@ -373,7 +383,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                         free(*base_match);
                         /*pthread_mutex_unlock(&match_gen_lock);*/
                   }
-                  match = find_matches(tbc, ret);
+                  match = find_matches(tbc, ret, &n_matches);
             }
             }
 
@@ -476,9 +486,11 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                         fma.needle = recurse_str;
                         fma.tbc = tbc;
                         fma.ret = &match;
+                        shared->thread_spawned = 1;
                         pthread_create(&fmp, NULL, &find_matches_pth, &fma);
                   }
                   else{
+                        /*shared->thread_spawned = 0;*/
                         if(!end_ptr)
                               for(end_ptr = tmp_str; end_ptr[1]; ++end_ptr);
                         recurse_str[tmplen++] = ch;
@@ -492,7 +504,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, char* 
                   if(*free_s)free(ret);
 
                   reset_term();
-                  return tab_complete_internal_extra_mem_low_computation(tbc, recurse_str, tmplen, &match, iter_opts, bytes_read, free_s);
+                  return tab_complete_internal_extra_mem_low_computation(tbc, shared, recurse_str, tmplen, &match, iter_opts, bytes_read, free_s);
 
             }
 
@@ -510,7 +522,9 @@ char* tab_complete(struct tabcom* tbc, char iter_opts[2], int* bytes_read, _Bool
       #if LOW_MEM
       return tab_complete_internal(tbc, NULL, 0, *iter_opts, bytes_read, free_s);
       #else
-      char* ret = tab_complete_internal_extra_mem_low_computation(tbc, NULL, 0, NULL, iter_opts, bytes_read, free_s);
+      struct shared_d shared;
+      shared.thread_spawned = 0;
+      char* ret = tab_complete_internal_extra_mem_low_computation(tbc, &shared, NULL, 0, NULL, iter_opts, bytes_read, free_s);
       return ret;
       #endif
 }
