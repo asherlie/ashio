@@ -352,7 +352,7 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, struct
        * until the base char** which was created from find_matches() has been removed
        */
       _Bool tab;
-      char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), ** tmp_str, ** match = NULL, ** end_ptr = NULL;
+      char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), ** tmp_str, ** match = NULL;
       /* ret is only null if ctrl-c */
       *free_s = ret;
 
@@ -439,8 +439,12 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, struct
                         }
                         /* TODO: find_matches should inform us of size of match */
                         /* if we aren't aware of the last index of match */
-                        if(!end_ptr)end_ptr = tmp_str+(n_matches-1);
-                        tmp_str = end_ptr;
+                        /*should it be match + n_matches*/
+                        /*
+                         * if(!end_ptr)end_ptr = tmp_str+(n_matches-1);
+                         * tmp_str = end_ptr;
+                        */
+                        tmp_str = match+(n_matches-1);
                         continue;
                   }
                   /* ctrl-c */
@@ -494,15 +498,17 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, struct
                   }
                   else{
                         /*shared->thread_spawned = 0;*/
-                        if(!end_ptr)end_ptr = tmp_str+(n_matches-1);
+                        /*if(!end_ptr)end_ptr = tmp_str+(n_matches-1);*/
                         recurse_str[tmplen++] = ch;
                         recurse_str[tmplen] = 0;
                         /* adjusting the last index of match to user input */
                         /* TODO: is it a safe assumption that the last index of match
                          * will always be user input 
                          */
-                        *end_ptr = malloc(tmplen);
-                        memcpy(*end_ptr, recurse_str, tmplen);
+                        match[n_matches-1] = malloc(tmplen);
+                        /**end_ptr = malloc(tmplen);*/
+                        /*memcpy(*end_ptr, recurse_str, tmplen);*/
+                        memcpy(match[n_matches-1], recurse_str, tmplen);
 
                         narrow_matches(match, recurse_str);
                   }
