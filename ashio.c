@@ -329,7 +329,19 @@ struct shared_d{
       _Bool thread_spawned;
       /* this field is used only if !thread_spawned */
       int n_matches;
+
+      /* these fields are used to keep track of malloc'd strings that need to be freed */
+      int n_free;
+      char** cp_free;
 };
+
+void track_str(struct shared_d* shared){
+      (void)shared;
+}
+
+void free_tracked(struct shared_d* shared){
+      (void)shared;
+}
 
 pthread_t fmp;
 
@@ -487,8 +499,6 @@ char* tab_complete_internal_extra_mem_low_computation(struct tabcom* tbc, struct
                          */
                         /* TODO: free this */
                         match[n_matches-1] = malloc(tmplen);
-                        /**end_ptr = malloc(tmplen);*/
-                        /*memcpy(*end_ptr, recurse_str, tmplen);*/
                         memcpy(match[n_matches-1], recurse_str, tmplen);
 
                         shared->n_matches = n_matches-narrow_matches(match, recurse_str);
