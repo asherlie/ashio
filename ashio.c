@@ -349,19 +349,19 @@ void free_tracked(struct shared_d* shared){
 
 pthread_t fmp;
 
+/* TODO:
+ * all narrowing and recreating/rescanning/initial scanning should be done in different threads
+ *
+ * i actually think this is important
+ * each time a character is entered we create an initial scan
+ * or maybe when strings with >= 2 chars are entered
+ *
+ * i can even create a system where each time a new char is appended we can add a new char** of
+ * adjustments to the base char** 
+ * each time a char is deleted from current stream we pop off the relevant char**
+ * until the base char** which was created from find_matches() has been removed
+ */
 char* tab_complete_internal_low_comp(struct tabcom* tbc, struct shared_d* shared, char* base_str, int bs_len, char*** base_match, char iter_opts[2], int* bytes_read, _Bool* free_s){
-      /* TODO:
-       * all narrowing and recreating/rescanning/initial scanning should be done in different threads
-       *
-       * i actually think this is important
-       * each time a character is entered we create an initial scan
-       * or maybe when strings with >= 2 chars are entered
-       *
-       * i can even create a system where each time a new char is appended we can add a new char** of
-       * adjustments to the base char** 
-       * each time a char is deleted from current stream we pop off the relevant char**
-       * until the base char** which was created from find_matches() has been removed
-       */
       _Bool tab;
       char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), ** tmp_str, ** match = NULL;
       /* ret is only null if ctrl-c */
@@ -515,7 +515,6 @@ char* tab_complete_internal_low_comp(struct tabcom* tbc, struct shared_d* shared
 
             reset_term();
 
-            /*if(base_match && *end_ptr)free(*end_ptr);*/
             free(match);
       }
       free_tracked(shared);
