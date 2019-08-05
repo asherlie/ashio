@@ -1,15 +1,7 @@
-# disable optimizations for mac
-OS= $(shell uname)
-ifeq ($(OS),Darwin)
-OPT=
-else
-OPT=-O3
-endif
-
 CC= gcc
 # -I. is added because exmple files are in a different directory
 #  than ashio.c
-CFLAGS= -lpthread -Wall -Wextra -Wpedantic -I. -g $(OPT)
+CFLAGS= -lpthread -Wall -Wextra -Wpedantic -I. -g -O3
 
 all: example
 ex: ashio.c examples/example.c
