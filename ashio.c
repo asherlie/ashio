@@ -186,15 +186,12 @@ void* find_matches_pth(void* fma_v){
       return (void*)((uintptr_t)n_matches);
 }
 
-int narrow_matches(char** cpp, char* needle){
+int narrow_matches(char** cpp, char* needle, int cpplen){
       int n_removed = 0;
       for(char** i = cpp; *i; ++i){
             if(!strstr(*i, needle)){
                   ++n_removed;
-                  for(char** j = i; *j; ++j){
-                        /* this implicitly deals with moving over the NULL */
-                        *j = j[1];
-                  }
+                  memmove(i, i+1, (cpplen-1)*sizeof(char*));
                   --i;
             }
       }
@@ -395,7 +392,7 @@ __attribute__((optnone))
                         new_search = 0;
                         /* last index of match must be overwritten to be user input */
                         match[n_matches-1] = ret;
-                        n_matches -= narrow_matches(match, ret);
+                        n_matches -= narrow_matches(match, ret, n_matches);
                   }
             }
             if(new_search){
@@ -509,7 +506,7 @@ __attribute__((optnone))
                         track_str(shared, (match[n_matches-1] = malloc(tmplen)));
                         memcpy(match[n_matches-1], recurse_str, tmplen);
 
-                        shared->n_matches = n_matches-narrow_matches(match, recurse_str);
+                        shared->n_matches = n_matches-narrow_matches(match, recurse_str, n_matches);
                   }
                   if(*free_s)free(ret);
 
