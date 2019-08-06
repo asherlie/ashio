@@ -186,15 +186,36 @@ void* find_matches_pth(void* fma_v){
       return (void*)((uintptr_t)n_matches);
 }
 
-int narrow_matches(char** cpp, char* needle, int cpplen){
-      int n_removed = 0;
-      for(char** i = cpp; *i; ++i){
-            if(!strstr(*i, needle)){
-                  ++n_removed;
-                  memmove(i, i+1, (cpplen-1)*sizeof(char*));
-                  --i;
+int narrow_matches(char*** cpp, char* needle, int cpplen){
+      int rem_cap = 200, * rem_ind = malloc(sizeof(int)*rem_cap), n_removed = 0;
+
+      for(int i = 0; i < cpplen; ++i){
+            if(!strstr((*cpp)[i], needle)){
+                  if(rem_cap == n_removed){
+                        rem_cap *= 2;
+                        int* tmp = malloc(sizeof(int)*rem_cap);
+                        memcpy(tmp, rem_ind, sizeof(int)*n_removed);
+                        free(rem_ind);
+                        rem_ind = tmp;
+                  }
+                  rem_ind[n_removed++] = i;
             }
       }
+
+      char** tmp = malloc(sizeof(char*)*((cpplen-n_removed)+1));
+      tmp[cpplen-n_removed] = 0;
+
+      int j = 0, ti = 0;
+      for(int i = 0; i < cpplen; ++i){
+            if(i != n_removed && i == rem_ind[j])++j;
+            else tmp[ti++] = (*cpp)[i];
+      }
+      
+      free(*cpp);
+      *cpp = tmp;
+
+      free(rem_ind);
+
       return n_removed;
 }
 
@@ -392,7 +413,7 @@ __attribute__((optnone))
                         new_search = 0;
                         /* last index of match must be overwritten to be user input */
                         match[n_matches-1] = ret;
-                        n_matches -= narrow_matches(match, ret, n_matches);
+                        n_matches -= narrow_matches(&match, ret, n_matches);
                   }
             }
             if(new_search){
@@ -506,7 +527,7 @@ __attribute__((optnone))
                         track_str(shared, (match[n_matches-1] = malloc(tmplen)));
                         memcpy(match[n_matches-1], recurse_str, tmplen);
 
-                        shared->n_matches = n_matches-narrow_matches(match, recurse_str, n_matches);
+                        shared->n_matches = n_matches-narrow_matches(&match, recurse_str, n_matches);
                   }
                   if(*free_s)free(ret);
 
