@@ -2,9 +2,10 @@ CC= gcc
 
 # -I. is added because exmple files are in a different directory
 #  than ashio.c
-CFLAGS= -lpthread -Wall -Wextra -Wpedantic -I. -g -O3
+CFLAGS= -lpthread -Wall -Wextra -Werror -Wpedantic -I. -g -O3
 
 OBJ=ashio.o
+EX=ex ex_str exp_ex large
 
 all: example
 
@@ -26,11 +27,8 @@ large: $(OBJ) examples/large_input.c
 
 .PHONY:
 example: 
-	make ex
-	make ex_str
-	make exp_ex
-	make large
+	make $(EX)
 
 .PHONY:
 clean:
-	rm -f ex exp_ex ex_str large
+	rm -f $(OBJ) $(EX)
