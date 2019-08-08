@@ -2,7 +2,7 @@ CC= gcc
 
 # -I. is added because exmple files are in a different directory
 #  than ashio.c
-CFLAGS= -lpthread -Wall -Wextra -Werror -Wpedantic -I. -g -O3
+CFLAGS= -pthread -Wall -Wextra -Werror -Wpedantic -I. -g -O3
 
 OBJ=ashio.o
 EX=ex ex_str exp_ex large
