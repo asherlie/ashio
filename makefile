@@ -20,12 +20,16 @@ ex_str: $(OBJ) examples/struct_example.c
 exp_ex: $(OBJ) examples/exp_example.c
 	$(CC) $(CFLAGS) $(OBJ) examples/exp_example.c -o exp_ex
 
+large: $(OBJ) examples/large_input.c
+	$(CC) $(CFLAGS) $(OBJ) examples/large_input.c -o large
+
 
 .PHONY:
 example: 
 	make ex
 	make ex_str
 	make exp_ex
+	make large
 
 .PHONY:
 clean:
