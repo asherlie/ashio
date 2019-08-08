@@ -13,6 +13,7 @@ example:
 	$(CC) $(CFLAGS) ashio.c examples/example.c -o ex
 	$(CC) $(CFLAGS) ashio.c examples/exp_example.c -o exp_ex
 	$(CC) $(CFLAGS) ashio.c examples/struct_example.c -o ex_str
+	$(CC) $(CFLAGS) ashio.c examples/large_input.c -o large
 
 .PHONY:
 clean:
