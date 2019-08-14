@@ -1,4 +1,4 @@
-#define ASHIO_VER "1.5.2"
+#define ASHIO_VER "1.7.0"
 
 #define LOW_MEM 0
 
@@ -27,6 +27,9 @@ struct gr_subroutine_arg{
       pthread_t prev_th;
 };
 
+void init_gsa(struct gr_subroutine_arg* gsa);
+void free_gsa(struct gr_subroutine_arg* gsa);
+
 /* tabcom operations */
 
 struct tabcom* init_tabcom(struct tabcom* tbc);
@@ -42,6 +45,6 @@ void reset_term();
 /* reading from stdin */
 
 char* getline_raw(int* bytes_read, _Bool* tab, int* ignore);
-char* getline_raw_sub(int* bytes_read, _Bool* tab, int* ignore, void* routine, struct gr_subroutine_arg* param);
+char* getline_raw_sub(int* bytes_read, _Bool* tab, int* ignore, void *(*routine)(void *), struct gr_subroutine_arg* param);
 
 char* tab_complete(struct tabcom* tbc, char iter_opts[2], int* bytes_read, _Bool* free_s);

@@ -37,6 +37,19 @@ void reset_term(){
  * the terminal to be in raw mode as well
  */
 
+void init_gsa(struct gr_subroutine_arg* gsa){
+      gsa->char_recvd = malloc(sizeof(char));
+      gsa->join_pth = malloc(sizeof(_Bool));
+      *gsa->join_pth = 0;
+      gsa->str_recvd = malloc(sizeof(char*));
+}
+void free_gsa(struct gr_subroutine_arg* gsa){
+      pthread_join(gsa->prev_th, NULL);
+      free(gsa->char_recvd);
+      free(gsa->join_pth);
+      free(gsa->str_recvd);
+}
+
 char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab, int* ignore,  void *(*routine)(void *), struct gr_subroutine_arg* param){
       tcgetattr(0, &raw);
       tcgetattr(0, &def);
@@ -124,10 +137,8 @@ char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab,
  *
  * param must be a struct with at least the members char* __char_recvd, char** __str_recvd
  */
-char* getline_raw_sub(int* bytes_read, _Bool* tab, int* ignore, void* routine, struct gr_subroutine_arg* param){
-      (void)routine;
-      (void)param;
-      return getline_raw_internal(NULL, 0, bytes_read, tab, ignore, NULL, NULL);
+char* getline_raw_sub(int* bytes_read, _Bool* tab, int* ignore, void *(*routine)(void *), struct gr_subroutine_arg* param){
+      return getline_raw_internal(NULL, 0, bytes_read, tab, ignore, routine, param);
 }
 
 char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
