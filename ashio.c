@@ -37,7 +37,7 @@ void reset_term(){
  * the terminal to be in raw mode as well
  */
 
-char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab, int* ignore){
+char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab, int* ignore,  void *(*routine)(void *), struct gr_subroutine_arg* param){
       tcgetattr(0, &raw);
       tcgetattr(0, &def);
       cfmakeraw(&raw);
@@ -71,6 +71,7 @@ char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab,
                   ret = NULL;
                   break;
             }
+            if(param)*param->char_recvd = c;
             /* if tab is detected */
             if(c == 9){
                   *tab = 1;
@@ -93,6 +94,21 @@ char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab,
             }
             ret[(*bytes_read)++] = c;
             ret[*bytes_read] = 0;
+
+            if(routine && param){
+                  /* each time a thread is created the previous thread should be joined */
+                  if(*param->join_pth){
+                        pthread_join(param->prev_th, NULL);
+                  }
+                  else *param->join_pth = 1;
+
+                  *param->str_recvd = ret;
+
+                  pthread_t pth;
+                  pthread_create(&pth, NULL, routine, param->pthread_arg);
+                  param->prev_th = pth;
+            }
+
             putchar(c);
       }
       /* before exiting, we restore term to its
@@ -103,8 +119,19 @@ char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab,
       return ret;
 }
 
+/*gtlr should take in a function pointer for a function to run of type void(char*)*/
+/* this function runs routine in a pthread each time a char is read 
+ *
+ * param must be a struct with at least the members char* __char_recvd, char** __str_recvd
+ */
+char* getline_raw_sub(int* bytes_read, _Bool* tab, int* ignore, void* routine, struct gr_subroutine_arg* param){
+      (void)routine;
+      (void)param;
+      return getline_raw_internal(NULL, 0, bytes_read, tab, ignore, NULL, NULL);
+}
+
 char* getline_raw(int* bytes_read, _Bool* tab, int* ignore){
-      return getline_raw_internal(NULL, 0, bytes_read, tab, ignore);
+      return getline_raw_internal(NULL, 0, bytes_read, tab, ignore, NULL, NULL);
 }
 
 /* tabcom operations */
@@ -187,7 +214,8 @@ void* find_matches_pth(void* fma_v){
 }
 
 int narrow_matches(char*** cpp, char* needle, int cpplen){
-      int rem_cap = 200, * rem_ind = malloc(sizeof(int)*rem_cap), n_removed = 0;
+      int rem_cap = 200, * rem_ind = malloc(sizeof(int)*(rem_cap+1)), n_removed = 0;
+      rem_ind[rem_cap] = -1;
 
       for(int i = 0; i < cpplen; ++i){
             if(!strstr((*cpp)[i], needle)){
@@ -205,11 +233,52 @@ int narrow_matches(char*** cpp, char* needle, int cpplen){
       char** tmp = malloc(sizeof(char*)*((cpplen-n_removed)+1));
       tmp[cpplen-n_removed] = 0;
 
-      int j = 0, ti = 0;
+      #if 0
+      we are populating tmp with all entries of cpp except for those in rem_ind
+      we will have an int* that will be incremented
+      #endif
+
+      int* ignore = rem_ind, ti = 0;
+      /*
+       * ignore: [2, 3, 4]
+       * x:  [0, 1, 2, 3, 4]
+       * i == 0
+       * i < 2
+      */
+
+      #if 0
+      ALSO RUN VALGRIND ./LARGE
+
+      this is being done to try and fix the error that occurs when the following occurs in large.c:
+      <tab>
+      909
+      <tab>
+      n
+      <tab>
+
+      the below is only temporarily enabled
+      #endif
       for(int i = 0; i < cpplen; ++i){
-            if(i != n_removed && i == rem_ind[j])++j;
+            if(*ignore != -1 && i == *ignore)++ignore;
             else tmp[ti++] = (*cpp)[i];
       }
+
+      #if 0
+      int j = 0, ti = 0;
+      for(int i = 0; i < cpplen; ++i){
+            /*if(i != n_removed && i == rem_ind[j])++j;*/
+            /* we are checking here to see if
+             *
+             * we can ignore this index
+             */
+            /*if(i != n_removed && i == rem_ind[j])++j;*/
+            if(cpplen-ti < n_removed && i == rem_ind[j])++j;
+            else{
+            tmp[ti++] = (*cpp)[i];
+            if(ti==cpplen-n_removed)break;
+            }
+      }
+      #endif
       
       free(*cpp);
       *cpp = tmp;
@@ -221,7 +290,7 @@ int narrow_matches(char*** cpp, char* needle, int cpplen){
 
 char* tab_complete_internal(struct tabcom* tbc, char* base_str, int bs_len, char iter_opts, int* bytes_read, _Bool* free_s){
       _Bool tab;
-      char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), * tmp_ch = NULL;
+      char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL, NULL, NULL), * tmp_ch = NULL;
 
       *free_s = 1;
       if(tab && tbc){
@@ -386,7 +455,7 @@ __attribute__((optnone))
 #endif
                         {
       _Bool tab;
-      char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL), ** tmp_str, ** match = NULL;
+      char* ret = getline_raw_internal(base_str, bs_len, bytes_read, &tab, NULL, NULL, NULL), ** tmp_str, ** match = NULL;
       /* ret is only null if ctrl-c */
       *free_s = ret;
 
@@ -516,8 +585,7 @@ __attribute__((optnone))
                         pthread_create(&fmp, NULL, &find_matches_pth, &fma);
                   }
                   else{
-                        /*shared->thread_spawned = 0;*/
-                        /*if(!end_ptr)end_ptr = tmp_str+(n_matches-1);*/
+                        shared->thread_spawned = 0; 
                         recurse_str[tmplen++] = ch;
                         recurse_str[tmplen] = 0;
                         /* adjusting the last index of match to user input */

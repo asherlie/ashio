@@ -1,6 +1,8 @@
-#define ASHIO_VER "1.5.1"
+#define ASHIO_VER "1.5.2"
 
 #define LOW_MEM 0
+
+#include <pthread.h>
 
 struct tabcom_entry{
       void* data_douplep;
@@ -10,6 +12,19 @@ struct tabcom_entry{
 struct tabcom{
       struct tabcom_entry* tbce;
       int n, cap, n_flattened;
+};
+
+struct gr_subroutine_arg{
+      char* char_recvd;
+      char** str_recvd;
+
+      /* set by user */
+      /* most of the time pthread_arg will be a struct with a member that is struct gr_subroutine_arg* */
+      void* pthread_arg;
+      
+      /* these are meant for internal use */
+      _Bool* join_pth;
+      pthread_t prev_th;
 };
 
 /* tabcom operations */
@@ -27,6 +42,6 @@ void reset_term();
 /* reading from stdin */
 
 char* getline_raw(int* bytes_read, _Bool* tab, int* ignore);
-char* getline_raw_sub(int* bytes_read, _Bool* tab, int* ignore, void* routine, void* param);
+char* getline_raw_sub(int* bytes_read, _Bool* tab, int* ignore, void* routine, struct gr_subroutine_arg* param);
 
 char* tab_complete(struct tabcom* tbc, char iter_opts[2], int* bytes_read, _Bool* free_s);
