@@ -90,23 +90,26 @@ char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab,
                   *tab = 1;
                   break;
             }
+            _Bool del;
             /* deletion */
-            if(c == 8 || c == 127){
+            if((del = (c == 8 || c == 127))){
                   if(*bytes_read == 0)continue;
                   ret[--(*bytes_read)] = 0;
                   printf("\r%s%c\r%s", ret, ' ', ret);
-                  continue;
             }
             /* buf_sz-1 to leave room for \0 */
-            if(*bytes_read == buf_sz-1){
-                  buf_sz *= 2;
-                  char* tmp_s = calloc(buf_sz, 1);
-                  memcpy(tmp_s, ret, *bytes_read);
-                  free(ret);
-                  ret = tmp_s;
+            else{
+                  if(*bytes_read == buf_sz-1){
+                        buf_sz *= 2;
+                        char* tmp_s = calloc(buf_sz, 1);
+                        memcpy(tmp_s, ret, *bytes_read);
+                        free(ret);
+                        ret = tmp_s;
+                  }
+
+                  ret[(*bytes_read)++] = c;
+                  ret[*bytes_read] = 0;
             }
-            ret[(*bytes_read)++] = c;
-            ret[*bytes_read] = 0;
 
             if(routine && param){
                   /* each time a thread is created the previous thread should be joined */
@@ -120,7 +123,10 @@ char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab,
                   pthread_t pth;
                   pthread_create(&pth, NULL, routine, param->pthread_arg);
                   param->prev_th = pth;
+
             }
+            /* we continue here if(del) because we need to call subroutine */
+            if(del)continue;
 
             putchar(c);
       }
