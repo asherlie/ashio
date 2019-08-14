@@ -12,10 +12,12 @@ ignore can optionally be set to an int* containing a 0 terminated list of charac
 the char* returned by getline_raw() should be freed
 
 
-char* tab_complete(struct tabcom* tbc, char iter_opts, int* bytes_read, _Bool* free_s) similarly
+char* tab_complete(struct tabcom* tbc, char iter_opts[2], int* bytes_read, _Bool* free_s) similarly
 reads lines from stdin
-once a tab character is read by tab_complete(), the user can iterate through 
-matches from the struct tabcom* tbc with iter_opts
+once a tab character is read by tab_complete(), the user can iterate forwards through 
+matches from the struct tabcom* tbc with iter_opts[0] and backwards with iter_opts[1]
+
+NOTE: backwards iteration only works if the macro LOW_MEM is defined as 0
 
 if tbc is NULL, tab_complete() behaves ike getline_raw()
 

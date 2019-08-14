@@ -125,7 +125,7 @@ char* getline_raw_internal(char* base, int baselen, int* bytes_read, _Bool* tab,
                   param->prev_th = pth;
 
             }
-            /* we continue here if(del) because we need to call subroutine */
+            /* we continue here if(del) because we needed to call subroutine */
             if(del)continue;
 
             putchar(c);
