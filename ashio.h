@@ -1,4 +1,4 @@
-#define ASHIO_VER "1.5.0"
+#define ASHIO_VER "1.5.1"
 
 #define LOW_MEM 0
 
@@ -27,5 +27,6 @@ void reset_term();
 /* reading from stdin */
 
 char* getline_raw(int* bytes_read, _Bool* tab, int* ignore);
+char* getline_raw_sub(int* bytes_read, _Bool* tab, int* ignore, void* routine, void* param);
 
 char* tab_complete(struct tabcom* tbc, char iter_opts[2], int* bytes_read, _Bool* free_s);
