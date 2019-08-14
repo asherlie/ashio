@@ -5,7 +5,7 @@ CC= gcc
 CFLAGS= -pthread -Wall -Wextra -Werror -Wpedantic -I. -g -O3
 
 OBJ=ashio.o
-EX=ex ex_str exp_ex large
+EX=ex ex_str exp_ex large sub
 
 all: example
 
@@ -23,6 +23,9 @@ exp_ex: $(OBJ) examples/exp_example.c
 
 large: $(OBJ) examples/large_input.c
 	$(CC) $(CFLAGS) $(OBJ) examples/large_input.c -o large
+
+sub: $(OBJ) examples/subroutine.c
+	$(CC) $(CFLAGS) $(OBJ) examples/subroutine.c -o sub
 
 
 .PHONY:
