@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* TODO: this example seg faults when tab is pressed twice
+ * fix this
+ */
 int main(){
       char** cpp = malloc(sizeof(char*)*1e6);
       for(int i = 0; i < 1e6; ++i){
