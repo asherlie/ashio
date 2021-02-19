@@ -4,6 +4,7 @@
 
 /* TODO: this example seg faults when tab is pressed twice
  * fix this
+ * NOTE: this only occurs on mac OS
  */
 int main(){
       char** cpp = malloc(sizeof(char*)*1e6);
